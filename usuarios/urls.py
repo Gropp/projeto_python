@@ -3,5 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path("cadastro/", views.cadastro, name="cadastro")
+    # nas views é chamado o metodo que executa no path
+    path("cadastro/", views.cadastro, name="cadastro"),
+    path("login/", views.logar, name="login"),
 ]

@@ -5,11 +5,14 @@ from django.contrib.auth.models import User
 # importar as constantes do django - messages de erro
 from django.contrib.messages import constants
 from django.contrib import messages
+# importar biblioteca do django que autentica os usuarios no banco
+# a funcao login que faz o resto apos autenticar o usuario
+from django.contrib.auth import authenticate, login
 
 # Create your views here.
 
 def cadastro(request):
-    print(request.POST)
+    # print(request.POST)
     # request.POST.get("primeiro_nome")
     if request.method == 'GET':
         return render(request, "cadastro.html")
@@ -45,3 +48,28 @@ def cadastro(request):
             return redirect('/usuarios/cadastro')
         
         return redirect('/usuarios/cadastro')
+
+# o django tem uma funcao nativa chamada login
+def logar(request):
+    # antes de carregar o html testa o tipo de requisicao
+    # get carrega a pagina de login
+    if request.method == "GET":
+        return render(request, 'login.html')
+    # post envia os dados do formulario
+    elif request.method == "POST":
+        # usar os nomes definidos no form do html
+        username = request.POST.get('username')
+        senha = request.POST.get('senha')
+        user = authenticate(username=username, password=senha)
+        if user:
+            #loga com o usuario
+            login(request, user)
+            return redirect('/')
+        else:
+            #avisa que o username ou senha estão invalidos
+            messages.add_message(request, constants.ERROR, 'Usuário ou senha incorretos.')
+            return redirect('/usuarios/login')
+        
+    #print(user)
+    #testar o request:
+    #return HttpResponse(f'{username} - {senha}')
