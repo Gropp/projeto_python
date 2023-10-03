@@ -54,6 +54,14 @@
             </div>
         </div>
         <br>
+        {% comment %} variavel global message {% endcomment %}
+        {% if messages %}
+            {% for message in messages  %}
+                {% comment %} {{message}} | {{message.tags}} {% endcomment %}
+                <div class="alert {{message.tags}}">{{message}}</div>
+            {% endfor %}
+        {% endif %}
+        <br>
         <input type="submit" class="btn-default" value="Cadastrar">
         </form>
     </div>
