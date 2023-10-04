@@ -33,16 +33,22 @@ def cadastro(request):
             return redirect('/usuarios/cadastro')
         
         try:
-
             # TODO: Validar se o username do usuario nao existe no BD
-            user = User.objects.create_user(
-                first_name = primeiro_nome,
-                last_name = ultimo_nome,
-                username = username,
-                email=email,
-                password=senha
-            )
-            messages.add_message(request, constants.SUCCESS, 'Usuário cadastrado com sucesso.')
+            # acho que deu certo :)
+            verifica_user = User.objects.get(username=username)
+            print(verifica_user)
+            if verifica_user:
+                messages.add_message(request, constants.ERROR, 'Usuário já está cadastrado.')
+                return redirect('/usuarios/cadastro')
+            else:    
+                user = User.objects.create_user(
+                    first_name = primeiro_nome,
+                    last_name = ultimo_nome,
+                    username = username,
+                    email=email,
+                    password=senha
+                )
+                messages.add_message(request, constants.SUCCESS, 'Usuário cadastrado com sucesso.')
         except:
             messages.add_message(request, constants.ERROR, 'Erro ao cadastrar usuário, contato o suporte.')
             return redirect('/usuarios/cadastro')
