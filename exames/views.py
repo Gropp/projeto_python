@@ -92,11 +92,34 @@ def fechar_pedido(request):
         pedido_exame.exames.add(solicitacao_exames_temp)
     
     pedido_exame.save()
-    messages.add_messages(request, constants.SUCCESS, 'Pedido de exame realizado com sucesso.')
+    messages.add_message(request, constants.SUCCESS, 'Pedido de exame realizado com sucesso.')
 
     #print(exames_id)
     #print(request.user)
     return redirect('/exames/gerenciar_pedidos/')
 
+@login_required
+
 def gerenciar_pedidos(request):
-    return render(request, 'gerenciar_pedidos.html')
+    # instanciamos a tabela e trazemos os pedidos de exames do usuario LOGADO
+    # o filter traz uma lista de dados
+    pedidos_exames = PedidosExames.objects.filter(usuario=request.user)
+    # enviamos esses pedidos para o HTML passando como argumento do render
+    return render(request, 'gerenciar_pedidos.html', {'pedidos_exames':pedidos_exames})
+
+@login_required
+
+def cancelar_pedido(request, pedido_id):
+    # instanciamos a tabela e trazemos o pedido de exame do usuario LOGADO
+    # o get traz somente um pedido
+    pedido = PedidosExames.objects.get(id=pedido_id)
+    # por seguranca testamos se o usuario logado e o usuario do pedido sao os mesmos
+    if not pedido.usuario == request.user:
+        messages.add_message(request, constants.ERROR, 'O pedido selecionado não pertence a esse usuário.')
+        return redirect('/exames/gerenciar_pedidos/')
+    # podemos alterar um valor de um campo no BD
+    pedido.agendado = False
+    # agora precisamos GRAVAR no BD a altercao
+    pedido.save()
+    messages.add_message(request, constants.SUCCESS, 'Pedido cancelado com sucesso.')
+    return redirect('/exames/gerenciar_pedidos/')
