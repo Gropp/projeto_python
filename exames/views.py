@@ -1,12 +1,14 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 # biblioteca de usuarios - testar se esta ou nao logado, entre outras funcoes
 # from django.contrib.auth.models import User
 # IMPORTANDO UM DECORET DO PYTHON, PODEMOS FAZE QUE DE FORMA AUTOMATICA SOMENTE USUARIOS LOGADOS ACESSEM ESSA VIEW, SEM A NECESSIDADE DE CODIGOS DE TESTE
 from django.contrib.auth.decorators import login_required
-# importamos o model do banco de dados TiposExames
-from .models import TiposExames
-import datetime
+# importamos o model do banco de dados TiposExames, PedidosExames e SolicitacaoExame
+from .models import TiposExames, PedidosExames, SolicitacaoExame
+from datetime import datetime
+from django.contrib import messages
+from django.contrib.messages import constants
 
 
 # Create your views here.
@@ -27,6 +29,7 @@ def solicitar_exames(request):
 
     # buscamos na tabela todos os tipos de exames (.filter para filtrar)
     # torna a variavel global para funcionar no IF e no ELIF
+    # CRIAMOS UMA INSTANCIA DA TABELA/MODELO TiposExames
     tipos_exames = TiposExames.objects.all()
 
     # testa o tipo da requisicao. Se for carregar a pagina (GET) renderiza um HTML no templates
@@ -38,7 +41,7 @@ def solicitar_exames(request):
     elif request.method == "POST":
         # DESAFIO DE POR A DATA
         # data atual
-        data_hoje = datetime.date.today()
+        data_hoje = datetime.now()
 
         exames_id = request.POST.getlist('exames')
         # aplica o filtro in no "select" da tabela TiposExames
@@ -57,7 +60,43 @@ def solicitar_exames(request):
                                                          'solicitacao_exames':solicitacao_exames,
                                                          'preco_total':preco_total,
                                                          'data_atual': data_hoje})
+
+@login_required
+
 def fechar_pedido(request):
+    # recebe do form os ids dos exames selecionados
     exames_id = request.POST.getlist('exames')
-    print(exames_id)
-    return HttpResponse('Fechar pedido')
+    # aplica o filtro in no "select" da tabela TiposExames e retorna todos campos desses exames
+    solicitacao_exames = TiposExames.objects.filter(id__in=exames_id)
+
+    # CRIAMOS UMA INSTANCIA DA TABELA/MODELO PedidosExames
+    pedido_exame = PedidosExames(
+        # pegamos o usuario LOGADO
+        usuario = request.user,
+        # o  campo agendado ja é True por default
+        data = datetime.now()
+    )
+    # para salvar o pedido exame no banco de dados
+    pedido_exame.save()
+
+    # VAMOS CRIAR UMA SOLICITACAO PARA CADA UM DOS EXAMES
+    # INSTANCIA A TABELA DENTRO DO FOR PARA CADA EXAME
+    for exame in solicitacao_exames:
+        solicitacao_exames_temp = SolicitacaoExame(
+            usuario=request.user,
+            exame=exame,
+            status="E"
+        )
+        # SALVAR NO BANCO
+        solicitacao_exames_temp.save()
+        pedido_exame.exames.add(solicitacao_exames_temp)
+    
+    pedido_exame.save()
+    messages.add_messages(request, constants.SUCCESS, 'Pedido de exame realizado com sucesso.')
+
+    #print(exames_id)
+    #print(request.user)
+    return redirect('/exames/gerenciar_pedidos/')
+
+def gerenciar_pedidos(request):
+    return render(request, 'gerenciar_pedidos.html')

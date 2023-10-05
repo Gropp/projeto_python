@@ -17,7 +17,9 @@ class TiposExames(models.Model):
     horario_inicial = models.IntegerField()
     horario_final = models.IntegerField()
 
-    # mostra o nome da classe e nao o endereço
+    # mostra o nome da classe e nao o endereço no banco de dados
+    # sem essa string ele coloca o nome do objeto como referencia no BD
+    # SAO DOIS UNDERLINES DE CADA LADO __
     def __str__(self):
         return self.nome
 
@@ -33,7 +35,7 @@ class SolicitacaoExame(models.Model):
     requer_senha = models.BooleanField(default=False)
     senha = models.CharField(max_length=16, null=True, blank=True)
 
-    def _str_(self):
+    def __str__(self):
         return f'{self.usuario} | {self.exame.nome}'
 
 class PedidosExames(models.Model):
@@ -42,5 +44,5 @@ class PedidosExames(models.Model):
     agendado = models.BooleanField(default=True)
     data = models.DateField()
 
-    def _str_(self):
+    def __str__(self):
       return f'{self.usuario} | {self.data}'
