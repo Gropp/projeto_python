@@ -123,3 +123,45 @@ def cancelar_pedido(request, pedido_id):
     pedido.save()
     messages.add_message(request, constants.SUCCESS, 'Pedido cancelado com sucesso.')
     return redirect('/exames/gerenciar_pedidos/')
+
+@login_required
+
+def gerenciar_exames(request):
+    # instanciamos o banco e filtramos TODOS os exames do usurio LOGADO
+    exames = SolicitacaoExame.objects.filter(usuario=request.user)
+    # passamos esse objeto para o HTML como argumento
+    return render(request, 'gerenciar_exames.html', {'exames': exames})
+
+@login_required
+
+def permitir_abrir_exame(request, exame_id):
+    exame = SolicitacaoExame.objects.get(id=exame_id)
+    #TODO VERIFICAR SE O EXAME TEM PDF CADASTRADO
+    if not exame.resultado:
+        messages.add_message(request, constants.ERROR, 'O exame solicitado não está disponível. Contate um atendente para auxiliá-lo.')
+        return redirect('/exames/gerenciar_exames/')
+    elif not exame.requer_senha:
+        return redirect(exame.resultado.url)
+    else:
+        # usar o f para passar o path e o argumento
+        return redirect(f'/exames/solicitar_senha_exame/{exame.id}')
+
+@login_required
+
+def solicitar_senha_exame(request, exame_id):
+    exame = SolicitacaoExame.objects.get(id=exame_id)
+    if request.method == "GET":
+        # passa a instancia do SolicitarExame - exame como context da URL
+        # assim é possivel referenciar a tabela e tabelas relacionadas no HTML
+        return render(request, 'solicitar_senha_exame.html', {'exame': exame})
+    elif request.method == "POST":
+        # o sistema só entra em solicitar_senha_exame, se tiver um PDF anexado
+        # entao nao precisa testar novamente aqui dentro
+        # recupera o valor do campo senha do HTML
+        senha = request.POST.get('senha')
+        if senha == exame.senha:
+            return redirect(exame.resultado.url)
+        else:
+            messages.add_message(request, constants.ERROR, 'Senha Invalida.')
+            # sempre ao redirecionar para um html com argumento, utilize o f antes do path
+            return redirect(f'/exames/solicitar_senha_exame/{exame.id}')
