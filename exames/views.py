@@ -5,7 +5,7 @@ from django.http import HttpResponse
 # IMPORTANDO UM DECORET DO PYTHON, PODEMOS FAZE QUE DE FORMA AUTOMATICA SOMENTE USUARIOS LOGADOS ACESSEM ESSA VIEW, SEM A NECESSIDADE DE CODIGOS DE TESTE
 from django.contrib.auth.decorators import login_required
 # importamos o model do banco de dados TiposExames, PedidosExames e SolicitacaoExame
-from .models import TiposExames, PedidosExames, SolicitacaoExame
+from .models import TiposExames, PedidosExames, SolicitacaoExame, AcessoMedico
 from datetime import datetime
 from django.contrib import messages
 from django.contrib.messages import constants
@@ -165,3 +165,48 @@ def solicitar_senha_exame(request, exame_id):
             messages.add_message(request, constants.ERROR, 'Senha Invalida.')
             # sempre ao redirecionar para um html com argumento, utilize o f antes do path
             return redirect(f'/exames/solicitar_senha_exame/{exame.id}')
+
+@login_required
+
+def gerar_acesso_medico(request):
+    if request.method == "GET":
+        # O HTMLprecisa de dados do acesso medico existentes no banco para preencher uma tabela ao carregar a pagina
+        # entao criamos um objeto com todos os dados do banco AcessoMedico com o usuario LOGADO como filtro
+        acessos_medico = AcessoMedico.objects.filter(usuario=request.user)
+        # passa a instancia do SolicitarExame - exame como context da URL
+        # assim é possivel referenciar a tabela e tabelas relacionadas no HTML
+        # enviamos esse objeto para o HTML durante a operacao de RENDER com o alias acessos_medico
+        return render(request, 'gerar_acesso_medico.html', {'acessos_medico':acessos_medico})
+    elif request.method == "POST":
+        # recebe do HTML TODOS os dados do formulario gerar acesso medico
+        identificacao = request.POST.get('identificacao')
+        tempo_de_acesso = request.POST.get('tempo_de_acesso')
+        data_exame_inicial = request.POST.get('data_exame_inicial')
+        data_exame_final = request.POST.get('data_exame_final')
+        
+        # instancia o modelo
+        acesso_medico = AcessoMedico(
+            usuario = request.user,
+            identificacao = identificacao,
+            tempo_de_acesso = tempo_de_acesso,
+            data_exames_iniciais = data_exame_inicial,
+            data_exames_finais = data_exame_final,
+            criado_em = datetime.now()
+        )
+
+        # apos instanciar e carregar as variaveis, salva no banco de dados:
+        acesso_medico.save()
+
+        messages.add_message(request, constants.SUCCESS, 'Acesso cadastrado com sucesso.')
+        return redirect('/exames/gerar_acesso_medico/')
+
+# o medico só quer acessar o exame através do TOKEN, sem fazer login
+def acesso_medico(request, token):
+    acesso_medico = AcessoMedico.objects.get(token=token)
+    if acesso_medico.status == "Expirado":
+        messages.add_message(request, constants.ERROR, 'Esse Token já expirou, solicite outro.')
+        return redirect('/usuarios/login')
+    # colocando dois filtros seria como um e.
+    pedidos = PedidosExames.objects.filter(data__gte = acesso_medico.data_exames_iniciais).filter(data__lte=acesso_medico.data_exames_finais).filter(usuario=acesso_medico.usuario)
+    
+    return render(request, 'acesso_medico.html', {'pedidos': pedidos})

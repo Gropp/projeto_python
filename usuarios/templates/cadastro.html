@@ -11,6 +11,13 @@
     <br/>
     <br/>
     <div class="container">
+        {% comment %} variavel global message {% endcomment %}
+        {% if messages %}
+            {% for message in messages  %}
+                {% comment %} {{message}} | {{message.tags}} {% endcomment %}
+                <div class="alert {{message.tags}}">{{message}}</div>
+            {% endfor %}
+        {% endif %}
         <h3 class="font-destaque">Cadastre-se</h3>
         <div class="row">
             <div class="col-md-3" style="text-align: center">
@@ -54,13 +61,6 @@
             </div>
         </div>
         <br>
-        {% comment %} variavel global message {% endcomment %}
-        {% if messages %}
-            {% for message in messages  %}
-                {% comment %} {{message}} | {{message.tags}} {% endcomment %}
-                <div class="alert {{message.tags}}">{{message}}</div>
-            {% endfor %}
-        {% endif %}
         <br>
         <input type="submit" class="btn-default" value="Cadastrar">
         </form>
