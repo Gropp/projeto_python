@@ -36,7 +36,6 @@ def cadastro(request):
             # TODO: Validar se o username do usuario nao existe no BD
             # acho que deu certo :)
             verifica_user = User.objects.get(username=username)
-            print(verifica_user)
             if verifica_user:
                 messages.add_message(request, constants.ERROR, 'Usuário já está cadastrado.')
                 return redirect('/usuarios/cadastro')
@@ -70,7 +69,7 @@ def logar(request):
         if user:
             #loga com o usuario
             login(request, user)
-            return redirect('/')
+            return redirect('/exames/solicitar_exames/')
         else:
             #avisa que o username ou senha estão invalidos
             messages.add_message(request, constants.ERROR, 'Usuário ou senha incorretos.')
